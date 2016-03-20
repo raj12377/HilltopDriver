@@ -105,6 +105,11 @@ public class HomeActivity extends Activity {
             Location loc=getCurrentDriverLocation();
             if (loc == null) {
                 System.out.println("WARNING : COULD NOT GET LOCATION, NOT SENDING TO HILLTOP SERVER");
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 continue;
             }
             System.out.println("sending location ("+loc.getLatitude()+","+loc.getLongitude()+")");
@@ -177,6 +182,8 @@ public class HomeActivity extends Activity {
             System.out.println("no permission to access location of device");
             return null;
         }
+        System.out.println("provider is "+provider);
+        System.out.println("location manager is "+locationManager.toString());
         myLocation = locationManager.getLastKnownLocation(provider);
         return myLocation;
 
