@@ -71,7 +71,7 @@ public class HomeActivity extends Activity {
 
         /*
         try {
-           loadLoction();
+           sendLocation();
         } catch (JSONException e) {
            e.printStackTrace();
         }
@@ -89,25 +89,34 @@ public class HomeActivity extends Activity {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},REQUEST_FINE_LOC);
         } else {
-
+            try {
+                sendLocation();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
 
 
 
     }
-    public void loadLoction() throws JSONException {
+    public void sendLocation() throws JSONException {
         while (true)
         {
             Location loc=getCurrentDriverLocation();
+            if (loc == null) {
+                System.out.println("WARNING : COULD NOT GET LOCATION, NOT SENDING TO HILLTOP SERVER");
+                continue;
+            }
+            System.out.println("sending location ("+loc.getLatitude()+","+loc.getLongitude()+")");
             LatLng driverLoc=new LatLng(loc.getLatitude(),loc.getLongitude());
             String URL="http://hilltop-bradleyuniv.rhcloud.com/rest/updateLocation";
-            Map b = new HashMap();
-            b.put("lat", driverLoc.latitude);
-            b.put("lon", driverLoc.longitude);
+            Map<String,String> b = new HashMap<String,String>();
+            b.put("lat", driverLoc.latitude+"");
+            b.put("lon", driverLoc.longitude+"");
             if (previous != null)
-                b.put("bearing", getBearing(driverLoc, previous));
+                b.put("bearing", getBearing(driverLoc, previous)+"");
             else
-                b.put("bearing", 0);
+                b.put("bearing", 0+"");
 
             try {
                 JsonObjectRequest req = new JsonObjectRequest(URL,new JSONObject(String.valueOf(b)),
