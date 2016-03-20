@@ -100,57 +100,62 @@ public class HomeActivity extends Activity {
 
     }
     public void sendLocation() throws JSONException {
-        while (true)
-        {
-            Location loc=getCurrentDriverLocation();
-            if (loc == null) {
-                System.out.println("WARNING : COULD NOT GET LOCATION, NOT SENDING TO HILLTOP SERVER");
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                continue;
-            }
-            System.out.println("sending location ("+loc.getLatitude()+","+loc.getLongitude()+")");
-            LatLng driverLoc=new LatLng(loc.getLatitude(),loc.getLongitude());
-            String URL="http://hilltop-bradleyuniv.rhcloud.com/rest/updateLocation";
-            Map<String,String> b = new HashMap<String,String>();
-            b.put("lat", driverLoc.latitude+"");
-            b.put("lon", driverLoc.longitude+"");
-            if (previous != null)
-                b.put("bearing", getBearing(driverLoc, previous)+"");
-            else
-                b.put("bearing", 0+"");
+        Runnable runnable = new Runnable() {
 
-            try {
-                JsonObjectRequest req = new JsonObjectRequest(URL,new JSONObject(String.valueOf(b)),
-                        new Response.Listener<JSONObject>() {
-                            @Override
-                            public void onResponse(JSONObject response) {
-                                try {
-                                    VolleyLog.v("Response:%n %s", response.toString(4));
-                                    System.out.println("response "+response.toString(4));
-
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        VolleyLog.e("Error: ", error.getMessage());
+            @Override
+            public void run() {
+                while (true)
+                {
+                    Location loc=getCurrentDriverLocation();
+                    if (loc == null) {
+                        System.out.println("WARNING : COULD NOT GET LOCATION, NOT SENDING TO HILLTOP SERVER");
+                        try {
+                            Thread.sleep(3000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        continue;
                     }
-                });
-                mRequestQueue.add(req);
-                Thread.sleep(3000);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                    System.out.println("sending location ("+loc.getLatitude()+","+loc.getLongitude()+")");
+                    LatLng driverLoc=new LatLng(loc.getLatitude(),loc.getLongitude());
+                    String URL="http://hilltop-bradleyuniv.rhcloud.com/rest/updateLocation/"+driverLoc.latitude+","+driverLoc.longitude+",";
+                    if (previous != null)
+                        URL+=getBearing(driverLoc, previous);
+                    else
+                        URL+=0;
 
-        }
+                    try {
+                        JsonObjectRequest req = new JsonObjectRequest(URL,null,
+                                new Response.Listener<JSONObject>() {
+                                    @Override
+                                    public void onResponse(JSONObject response) {
+                                        try {
+                                            VolleyLog.v("Response:%n %s", response.toString(4));
+                                            System.out.println("response "+response.toString(4));
+
+                                        } catch (JSONException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }, new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                VolleyLog.e("Error: ", error.getMessage());
+                                error.printStackTrace();
+                            }
+                        });
+                        mRequestQueue.add(req);
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            }
+        };
+        Thread sendLocationThread = new Thread(runnable);
+        sendLocationThread.start();
+
     }
     protected void onStart() {
         super.onStart();
