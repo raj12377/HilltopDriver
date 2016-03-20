@@ -10,6 +10,8 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v4.app.ActivityCompat;
 import android.widget.TextView;
 
@@ -101,8 +103,10 @@ public class HomeActivity extends Activity {
 
     }
     public void sendLocation() throws JSONException {
-        Runnable runnable = new Runnable() {
 
+        Handler handler = new Handler(Looper.getMainLooper());
+
+        handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 while (true)
@@ -153,9 +157,8 @@ public class HomeActivity extends Activity {
 
                 }
             }
-        };
-        Thread sendLocationThread = new Thread(runnable);
-        sendLocationThread.start();
+        }, 1000 );
+
 
     }
     protected void onStart() {
@@ -192,7 +195,7 @@ public class HomeActivity extends Activity {
         System.out.println("location manager is " + locationManager.toString());
         if (locationManager != null) {
             locationManager.requestLocationUpdates(
-                    LocationManager.NETWORK_PROVIDER, 0, 0, new LocationListener() {
+                    LocationManager.GPS_PROVIDER, 0, 0, new LocationListener() {
                         @Override
                         public void onStatusChanged(String provider, int status, Bundle extras) {
                         }
