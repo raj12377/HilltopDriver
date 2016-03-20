@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
@@ -188,8 +189,28 @@ public class HomeActivity extends Activity {
             return null;
         }
         System.out.println("provider is "+provider);
-        System.out.println("location manager is "+locationManager.toString());
-        myLocation = locationManager.getLastKnownLocation(provider);
+        System.out.println("location manager is " + locationManager.toString());
+        if (locationManager != null) {
+            locationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER, 0, 0, new LocationListener() {
+                        @Override
+                        public void onStatusChanged(String provider, int status, Bundle extras) {
+                        }
+
+                        @Override
+                        public void onProviderEnabled(String provider) {
+                        }
+
+                        @Override
+                        public void onProviderDisabled(String provider) {
+                        }
+
+                        @Override
+                        public void onLocationChanged(final Location location) {
+                        }
+                    });
+            myLocation = locationManager.getLastKnownLocation(provider);
+        }
         return myLocation;
 
     }
