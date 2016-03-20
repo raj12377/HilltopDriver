@@ -4,15 +4,12 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
-import android.view.View;
 import android.widget.TextView;
 
 import com.android.volley.Cache;
@@ -25,9 +22,7 @@ import com.android.volley.toolbox.BasicNetwork;
 import com.android.volley.toolbox.DiskBasedCache;
 import com.android.volley.toolbox.HurlStack;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
@@ -35,18 +30,9 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 
-import org.apache.http.ProtocolException;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.text.BreakIterator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,37 +40,23 @@ import java.util.Map;
  * Created by Raj on 3/13/2016.
  */
 public class HomeActivity extends Activity {
-    private GoogleApiClient client;
-    private LatLng previous;
     private LocationManager locationManager;
     private String provider;
     private static final int REQUEST_FINE_LOC = 0;
-    private TextView eta;
-    private Marker vehicleOne;
-    private Marker driverLoc;
-    private boolean trackVehicle = false;
+    private LatLng previous = null;
 
 
     Location myLocation;
-    NotificationManager notificationManager;
     RequestQueue mRequestQueue;
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
      */
-    private GoogleApiClient client2;
+    private GoogleApiClient mGoogleApiClient;
 
     protected void onCreate(Bundle savedInstance) {
         super.onCreate(savedInstance);
         setContentView(R.layout.home);
-
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        Criteria criteria = new Criteria();
-        provider = locationManager.getBestProvider(criteria, false);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOC);
-        }
 
         Cache cache = new DiskBasedCache(getCacheDir(), 1024 * 1024); // 1MB cap
 
@@ -97,17 +69,28 @@ public class HomeActivity extends Activity {
         // Start the queue
         mRequestQueue.start();
 
+        /*
+        try {
+           loadLoction();
+        } catch (JSONException e) {
+           e.printStackTrace();
+        }
+        */
+        if (mGoogleApiClient == null) {
+            mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .addApi(AppIndex.API)
+                    .build();
+        }
 
-        Location l1=getCurrentDriverLocation();
-        System.out.print("lat"+l1.getLatitude()+"long"+l1.getLongitude());
-      //  try {
-       //    loadLoction();
-        //} catch (JSONException e) {
-        //   e.printStackTrace();
-        //}
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client2 = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        Criteria criteria = new Criteria();
+        provider = locationManager.getBestProvider(criteria, false);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},REQUEST_FINE_LOC);
+        } else {
+
+        }
 
 
 
@@ -115,13 +98,17 @@ public class HomeActivity extends Activity {
     public void loadLoction() throws JSONException {
         while (true)
         {
-            Location l1=getCurrentDriverLocation();
-            LatLng l3=new LatLng(l1.getLatitude(),l1.getLongitude());
+            Location loc=getCurrentDriverLocation();
+            LatLng driverLoc=new LatLng(loc.getLatitude(),loc.getLongitude());
             String URL="http://hilltop-bradleyuniv.rhcloud.com/rest/updateLocation";
             Map b = new HashMap();
-            b.put("lat", driverLoc.getPosition().latitude);
-            b.put("lon", driverLoc.getPosition().longitude);
-            b.put("bearing", getBearing(l3, previous));
+            b.put("lat", driverLoc.latitude);
+            b.put("lon", driverLoc.longitude);
+            if (previous != null)
+                b.put("bearing", getBearing(driverLoc, previous));
+            else
+                b.put("bearing", 0);
+
             try {
                 JsonObjectRequest req = new JsonObjectRequest(URL,new JSONObject(String.valueOf(b)),
                         new Response.Listener<JSONObject>() {
@@ -153,42 +140,12 @@ public class HomeActivity extends Activity {
     }
     protected void onStart() {
         super.onStart();
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client2.connect();
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        Action viewAction = Action.newAction(
-                Action.TYPE_VIEW, // TODO: choose an action type.
-                "Home Page", // TODO: Define a title for the content shown.
-                // TODO: If you have web page content that matches this app activity's content,
-                // make sure this auto-generated web page URL is correct.
-                // Otherwise, set the URL to null.
-                Uri.parse("http://host/path"),
-                // TODO: Make sure this auto-generated app deep link URI is correct.
-                Uri.parse("android-app://com.bradleyhilltopdriver.android.hilltopdriver/http/host/path")
-        );
-        AppIndex.AppIndexApi.start(client2, viewAction);
+        mGoogleApiClient.connect();
     }
 
     protected void onStop() {
         super.onStop();
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        Action viewAction = Action.newAction(
-                Action.TYPE_VIEW, // TODO: choose an action type.
-                "Home Page", // TODO: Define a title for the content shown.
-                // TODO: If you have web page content that matches this app activity's content,
-                // make sure this auto-generated web page URL is correct.
-                // Otherwise, set the URL to null.
-                Uri.parse("http://host/path"),
-                // TODO: Make sure this auto-generated app deep link URI is correct.
-                Uri.parse("android-app://com.bradleyhilltopdriver.android.hilltopdriver/http/host/path")
-        );
-        AppIndex.AppIndexApi.end(client2, viewAction);
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client2.disconnect();
+        mGoogleApiClient.disconnect();
     }
 
     private float getBearing(LatLng from, LatLng to) {
@@ -205,16 +162,10 @@ public class HomeActivity extends Activity {
     }
 
 
-    private static double deg2rad(double deg) {
-        return (deg * Math.PI / 180.0);
-    }
-
-    private static double rad2deg(double rad) {
-        return (rad * 180 / Math.PI);
-    }
 
     private Location getCurrentDriverLocation() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            System.out.println("no permission to access location of device");
             return null;
         }
         myLocation = locationManager.getLastKnownLocation(provider);
@@ -232,28 +183,16 @@ public class HomeActivity extends Activity {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    //moveToCurrentLocation();
-
+                    Location l1=getCurrentDriverLocation();
+                    System.out.print("lat" + l1.getLatitude() + "long" + l1.getLongitude());
                 } else {
-
+                    System.out.println("permission denied");
                 }
                 return;
             }
-
-            // other 'case' lines to check for other
-            // permissions this app might request
         }
     }
 
-    public void setLocationManager(GoogleMap googleMap) {
 
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        Criteria criteria = new Criteria();
-        provider = locationManager.getBestProvider(criteria, false);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOC);
-        }
-    }
 
 }

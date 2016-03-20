@@ -159,7 +159,7 @@ package com.bradleyhilltopdriver.android.hilltopdriver;
         public void navigatetoLoginActivity(View view){
             Intent loginIntent = new Intent(getApplicationContext(),LoginActivity.class);
             // Clears History of Activity
-            loginIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            //loginIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(loginIntent);
         }
 
