@@ -10,9 +10,9 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.android.volley.Cache;
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Network;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -31,10 +31,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
-
-import cz.msebera.android.httpclient.entity.StringEntity;
 
 
 /**
@@ -53,6 +50,8 @@ public class LoginActivity extends Activity {
     Context context;
     final String URL = "http://hilltop-bradleyuniv.rhcloud.com/rest/driverLogin";
 
+    ProgressDialog dialog;
+
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -67,7 +66,7 @@ public class LoginActivity extends Activity {
         // Find Error Msg Text View control by ID
         errorMsg = (TextView) findViewById(R.id.login_error);
         // Find Email Edit View control by ID
-        driverText = (EditText) findViewById(R.id.loginEmail);
+        driverText = (EditText) findViewById(R.id.loginID);
         // Find Password Edit View control by ID
         pwdET = (EditText) findViewById(R.id.loginPassword);
         // Instantiate Progress Dialog object
@@ -97,7 +96,7 @@ public class LoginActivity extends Activity {
      *
      * @param view
      */
-    public void loginUser(View view)  {
+    public void loginUser(View view) {
         // Get Email Edit View Value
         String driver = driverText.getText().toString();
         // Get Password Edit View Value
@@ -106,37 +105,57 @@ public class LoginActivity extends Activity {
 
         // When Email Edit View and Password Edit View have values other than Null
         //if(Utility.isNotNull(driver) && Utility.isNotNull(password)){
-                // Invoke RESTful Web Service with Http parameters
+        // Invoke RESTful Web Service with Http parameters
 
-            // pass second argument as "null" for GET requests
+        // pass second argument as "null" for GET requests
 
-            HashMap<String, String> params = new HashMap<String, String>();
-            params.put("user",driver);
-            params.put("pass",password);
-            JsonObjectRequest req = new JsonObjectRequest(URL,new JSONObject(params),
-                    new Response.Listener<JSONObject>() {
-                        @Override
-                        public void onResponse(JSONObject response) {
-                            try {
-                                VolleyLog.v("Response:%n %s", response.toString(4));
-                                System.out.println("response "+response.toString(4));
-                                if (response.getString("status").contains("success")){
-                                    navigatetoHomeActivity();
-                                } else {
-                                    System.out.println("Invalid user/pass");
-                                    //change this and show dialog to driver.
-                                }
-                            } catch (JSONException e) {
-                                e.printStackTrace();
+        HashMap<String, String> params = new HashMap<String, String>();
+        params.put("user", driver);
+        params.put("pass", password);
+        JsonObjectRequest req = new JsonObjectRequest(URL, new JSONObject(params),
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            VolleyLog.v("Response:%n %s", response.toString(4));
+                            System.out.println("response " + response.toString(4));
+                            if (response.getString("status").contains("success")) {
+                                navigatetoHomeActivity();
+                            } else {
+                                System.out.println("Invalid user/pass");
+                                //change this and show dialog to driver.
+                                pwdET.setError("Invalid username/password");
+                                pwdET.requestFocus();
+
+
                             }
+                            dialog.dismiss();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
                         }
-                    }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    VolleyLog.e("Error: ", error.getMessage());
-                }
-            });
-            mRequestQueue.add(req);
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                error.printStackTrace();
+                VolleyLog.e("Error: ", error.getMessage());
+                pwdET.setError("Could not connect to Hilltop Server");
+                pwdET.requestFocus();
+                errorMsg.setError(error.getMessage());
+                dialog.hide();
+            }
+        });
+        req.setRetryPolicy(new DefaultRetryPolicy(
+                15000,
+                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        mRequestQueue.add(req);
+        dialog = new ProgressDialog(this);
+        dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        dialog.setMessage("Login in...");
+        dialog.setIndeterminate(true);
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
         //} else{
         //    Toast.makeText(getApplicationContext(), "Please fill the form, don't leave any field blank", Toast.LENGTH_LONG).show();
         //}

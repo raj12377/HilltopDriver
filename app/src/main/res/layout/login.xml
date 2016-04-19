@@ -7,7 +7,8 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="10dip">
+        android:padding="10dip"
+        android:weightSum="1">
 
         <TextView
             android:layout_width="fill_parent"
@@ -18,11 +19,11 @@
             android:textStyle="bold" />
 
         <EditText
-            android:id="@+id/loginEmail"
+            android:id="@+id/loginID"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter your Email ID"
-            android:inputType="textEmailAddress" />
+            android:hint="Enter your ID"
+            android:inputType="text" />
 
         <TextView
             android:layout_width="fill_parent"
@@ -55,16 +56,6 @@
             android:text="Login"
             android:textColor="#fff" />
 
-        <Button
-            android:id="@+id/btnLinkToRegisterScreen"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="40dip"
-            android:background="@null"
-            android:onClick="navigatetoRegisterActivity"
-            android:text="@string/signup"
-            android:textColor="#228b22"
-            android:textStyle="bold" />
     </LinearLayout>
 
 </ScrollView>
