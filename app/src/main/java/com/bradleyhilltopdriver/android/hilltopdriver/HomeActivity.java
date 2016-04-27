@@ -2,9 +2,12 @@ package com.bradleyhilltopdriver.android.hilltopdriver;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -69,6 +72,14 @@ public class HomeActivity extends Activity implements GoogleApiClient.Connection
             // Building the GoogleApi client
             buildGoogleApiClient();
             createLocationRequest();
+        } else {
+            Toast toast = Toast.makeText(this,"Google play services not found",Toast.LENGTH_LONG);
+            toast.show();
+            return;
+        }
+        if (!isNetworkAvailable()) {
+            Toast toast = Toast.makeText(this,"Please check your internet connectivity",Toast.LENGTH_LONG);
+            toast.show();
         }
         //requestLocAndStartLooper();
         Cache cache = new DiskBasedCache(getCacheDir(), 1024 * 1024); // 1MB cap
@@ -287,7 +298,13 @@ public class HomeActivity extends Activity implements GoogleApiClient.Connection
         }
         mLastLocation = LocationServices.FusedLocationApi
                 .getLastLocation(mGoogleApiClient);
-        System.out.println("got location " + mLastLocation.getLatitude() + "," + mLastLocation.getLongitude());
+        if (mLastLocation == null) {
+            Toast toast = Toast.makeText(this,"Could not get location, Please enable your location services",Toast.LENGTH_LONG);
+            toast.show();
+        }
+         else {
+            System.out.println("got location " + mLastLocation.getLatitude() + "," + mLastLocation.getLongitude());
+        }
     }
 
     @Override
@@ -354,5 +371,12 @@ public class HomeActivity extends Activity implements GoogleApiClient.Connection
         loc.setLatitude(location.latitude);
         loc.setLongitude(location.longitude);
         return loc;
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 }

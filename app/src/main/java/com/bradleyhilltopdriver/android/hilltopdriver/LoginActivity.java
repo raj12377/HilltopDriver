@@ -5,11 +5,14 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Cache;
 import com.android.volley.DefaultRetryPolicy;
@@ -89,6 +92,11 @@ public class LoginActivity extends Activity {
 
         // Start the queue
         mRequestQueue.start();
+        if (!isNetworkAvailable()) {
+            Toast toast = Toast.makeText(this,"Could not connect to internet",Toast.LENGTH_LONG);
+            toast.show();
+        }
+
     }
 
     /**
@@ -227,5 +235,12 @@ public class LoginActivity extends Activity {
         );
         AppIndex.AppIndexApi.end(client2, viewAction);
         client2.disconnect();
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 }
